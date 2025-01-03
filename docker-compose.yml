@@ -1,0 +1,17 @@
+version: "3.4"
+
+services:
+  postgres:
+    container_name: blood-buddy-db
+    image: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: himanshu
+      POSTGRES_DB: blood_buddy
+      POSTGRES_PASSWORD: 1234
+
+volumes:
+  postgres_data:

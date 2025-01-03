@@ -1,8 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
@@ -12,3 +9,51 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Donor {
+  id              Int      @id @default(autoincrement())
+  name            String
+  email           String   @unique
+  password        String?
+  bloodType       String?
+  location        String?
+  contactNo       String?
+  otpCode         String?
+  otpVerified     Boolean  @default(false) 
+  isDeleted       Boolean  @default(false) 
+  createdAt       DateTime @default(now())
+  otp             String?
+
+  chats           Chat[]   
+  @@index([email, otpVerified])
+}
+
+model Gainer {
+  id              Int      @id @default(autoincrement())
+  name            String?
+  email           String   @unique
+  password        String?
+  location        String?
+  contactNo       String?
+  otpCode         String? 
+  otpVerified     Boolean  @default(false) 
+  isDeleted       Boolean  @default(false) 
+  createdAt       DateTime @default(now())
+  otp             String?   // Add this line to fix the error
+
+  chats           Chat[]   
+  @@index([email, otpVerified])
+}
+
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  donorId   Int
+  gainerId  Int
+  message   String
+  createdAt DateTime @default(now())
+
+  donor     Donor    @relation(fields: [donorId], references: [id])
+  gainer    Gainer   @relation(fields: [gainerId], references: [id])
+}
+
