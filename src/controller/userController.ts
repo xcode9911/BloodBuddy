@@ -42,8 +42,7 @@ const sendOTPEmail = async (email: string, otp: string) => {
 };
 
 const validatePassword = (password: string) => {
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/; 
-  return passwordRegex.test(password);
+  return password.length >= 8;
 };
 
 export const register = async (req: Request, res: Response) => {
@@ -64,7 +63,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     if (!validatePassword(password)) {
-      return res.status(400).json({ message: 'Password must be at least 8 characters long and contain at least 1 letter and 1 number.' });
+      return res.status(400).json({ message: 'Password must be at least 8 characters long.' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -85,14 +84,14 @@ export const register = async (req: Request, res: Response) => {
       });
 
       otp = generateOTP();
-      console.log(otp,"OTP")
+      console.log(otp, "OTP")
 
       await prisma.donor.update({
         where: { email: user.email },
         data: { otpCode: otp },
       });
 
-      console.log("send mainl")
+      console.log("send mail")
       await sendOTPEmail(email, otp);
 
       return res.status(201).json({ message: 'Donor registered successfully. OTP sent to email.', user });
@@ -218,5 +217,122 @@ export const verifyOTP = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error verifying OTP:', err);
     return res.status(500).json({ message: 'Error verifying OTP', error: (err as Error).message });
+  }
+};
+
+export const getAllUsers = async (_req: Request, res: Response) => {
+  try {
+    const donors = await prisma.donor.findMany();
+    const gainers = await prisma.gainer.findMany();
+
+    return res.status(200).json({ donors, gainers });
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    return res.status(500).json({ message: 'Error fetching users', error: (err as Error).message });
+  }
+};
+
+export const myProfile = async (req: Request, res: Response) => {
+  const { id, userType } = req.query; // Get from query params
+
+  try {
+    let user;
+
+    if (userType === 'Donor') {
+      user = await prisma.donor.findUnique({ where: { id: Number(id) } });
+    } else if (userType === 'Gainer') {
+      user = await prisma.gainer.findUnique({ where: { id: Number(id) } });
+    } else {
+      return res.status(400).json({ message: 'Invalid user type' });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({ message: 'Profile fetched successfully', user });
+  } catch (err: unknown) {  // Explicitly typing `err` as `unknown`
+    console.error('Error fetching profile:', err);
+
+    // Type assertion to `Error` to access message
+    if (err instanceof Error) {
+      return res.status(500).json({ message: 'Error fetching profile', error: err.message });
+    } else {
+      // Fallback for unexpected error types
+      return res.status(500).json({ message: 'Unexpected error occurred' });
+    }
+  }
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  const { id, userType } = req.body; // Get userId and userType from the request body
+
+  try {
+    let user;
+
+    // Check user type and perform deletion based on that
+    if (userType === 'Donor') {
+      user = await prisma.donor.delete({ where: { id: Number(id) } });
+    } else if (userType === 'Gainer') {
+      user = await prisma.gainer.delete({ where: { id: Number(id) } });
+    } else {
+      return res.status(400).json({ message: 'Invalid user type' });
+    }
+
+    // Check if user was found and deleted
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({ message: 'User deleted successfully' });
+
+  } catch (err: unknown) { // Handle unknown error types
+    console.error('Error deleting user:', err);
+
+    // Type assertion to `Error` to access message
+    if (err instanceof Error) {
+      return res.status(500).json({ message: 'Error deleting user', error: err.message });
+    } else {
+      // Fallback for unexpected error types
+      return res.status(500).json({ message: 'Unexpected error occurred' });
+    }
+  }
+};
+
+// Edit Profile code 
+export const editProfile = async (req: Request, res: Response) => {
+  const { id, userType, name, email, contactNo, bloodType, location } = req.body;
+
+  try {
+    let user;
+
+    if (userType === 'Donor') {
+      user = await prisma.donor.findUnique({ where: { id: Number(id) } });
+      if (!user) {
+        return res.status(404).json({ message: 'Donor not found' });
+      }
+
+      user = await prisma.donor.update({
+        where: { id: Number(id) },
+        data: { name, email, contactNo, bloodType, location },
+      });
+    } else if (userType === 'Gainer') {
+      user = await prisma.gainer.findUnique({ where: { id: Number(id) } });
+      if (!user) {
+        return res.status(404).json({ message: 'Gainer not found' });
+      }
+
+      user = await prisma.gainer.update({
+        where: { id: Number(id) },
+        data: { name, email, contactNo, location },
+      });
+    } else {
+      return res.status(400).json({ message: 'Invalid user type' });
+    }
+
+    return res.status(200).json({ message: 'Profile updated successfully', user });
+  } catch (err) {
+    console.error('Error updating profile:', err);
+    return res.status(500).json({ message: 'Error updating profile', error: (err as Error).message });
   }
 };

@@ -53,7 +53,7 @@ model Chat {
   message   String
   createdAt DateTime @default(now())
 
-  donor     Donor    @relation(fields: [donorId], references: [id])
-  gainer    Gainer   @relation(fields: [gainerId], references: [id])
+  donor     Donor    @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  gainer    Gainer   @relation(fields: [gainerId], references: [id], onDelete: Cascade)
 }
 
