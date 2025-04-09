@@ -40,6 +40,6 @@ To give a better idea of the animations and UI, here are some sample images of t
 
 ### Donor Registration Screen
 
-![Donor Registration](https://drive.google.com/file/d/1jhT7V7CQrCJnCdMP3MARcE8A2aU2t4MS/view?usp=sharing)
+![Donor Registration](https://github.com/xcode9911/BloodBuddy/blob/main/DonarLogin%20Screen.png)
 
 
